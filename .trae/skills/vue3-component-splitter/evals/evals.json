@@ -1,0 +1,26 @@
+{
+  "skill_name": "vue3-component-splitter",
+  "evals": [
+    {
+      "id": 1,
+      "name": "crud-page-split",
+      "prompt": "帮我拆分一下这个用户管理页面，现在有 500 多行代码，包含了搜索表单、数据表格、分页、新增编辑对话框，还有统计图表，太复杂了",
+      "expected_output": "技能应该分析组件的复杂度，提供拆分方案，并输出拆分后的多个子组件代码",
+      "files": ["test-fixtures/UserManagement.vue"]
+    },
+    {
+      "id": 2,
+      "name": "complex-form-split",
+      "prompt": "这个订单创建表单有 400 行，包含订单信息、商品列表、物流信息、支付信息四个部分，帮我拆分成多个组件",
+      "expected_output": "技能应该识别出 4 个功能模块，按业务领域拆分为多个表单组件",
+      "files": ["test-fixtures/OrderCreateForm.vue"]
+    },
+    {
+      "id": 3,
+      "name": "dashboard-split",
+      "prompt": "我的 Dashboard 页面有 600 行，包含 8 个统计卡片和 5 个图表，帮我分析一下是否需要拆分，怎么拆分",
+      "expected_output": "技能应该分析后建议按卡片和图表进行拆分，提供合理的组件结构",
+      "files": ["test-fixtures/Dashboard.vue"]
+    }
+  ]
+}
