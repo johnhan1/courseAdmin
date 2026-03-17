@@ -1,254 +1,269 @@
 <template>
-  <div class="course-edit-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
+  <div class="workspace-page">
+    <!-- Top Nav -->
+    <!-- <header class="workspace-header">
       <div class="header-left">
-        <el-button :icon="ArrowLeft" @click="handleBack">返回</el-button>
-        <h2>{{ isEdit ? '编辑课程' : '新建课程' }}</h2>
+        <el-button link class="back-btn" @click="handleBack">
+          <el-icon><ArrowLeft /></el-icon>
+        </el-button>
+        <div class="title-with-icon">
+          <el-icon class="edit-icon"><EditPen /></el-icon>
+          <h2>工作区：内容编辑模式</h2>
+        </div>
       </div>
       <div class="header-right">
-        <el-button @click="handleSaveDraft">保存草稿</el-button>
-        <el-button type="primary" @click="handlePublish">立即发布</el-button>
+        <el-button class="preview-btn">预览课程</el-button>
+        <el-button type="primary" class="publish-btn" @click="handlePublish">
+          <el-icon><Upload /></el-icon>
+          保存并发布
+        </el-button>
       </div>
-    </div>
+    </header> -->
 
-    <!-- 基础信息区 -->
-    <el-card class="basic-info-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>基础信息</span>
-        </div>
-      </template>
-      
-      <el-form :model="courseForm" label-width="100px">
-        <el-row :gutter="24">
-          <el-col :span="16">
-            <el-form-item label="课程名称" required>
-              <el-input v-model="courseForm.name" placeholder="请输入课程名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="课程分类" required>
-              <el-select v-model="courseForm.category" placeholder="请选择" style="width: 100%;">
-                <el-option label="技术培训" value="tech" />
-                <el-option label="管理培训" value="management" />
-                <el-option label="产品培训" value="product" />
-                <el-option label="通用技能" value="general" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-form-item label="课程简介">
-          <el-input 
-            v-model="courseForm.description" 
-            type="textarea" 
-            :rows="3"
-            placeholder="请输入课程简介，帮助学员了解课程内容"
-          />
-        </el-form-item>
-        
-        <el-form-item label="课程封面">
-          <el-upload
-            class="cover-uploader"
-            action="/api/upload"
-            :show-file-list="false"
-            :on-success="handleCoverSuccess"
-          >
-            <img v-if="courseForm.cover" :src="courseForm.cover" class="cover-image" />
-            <div v-else class="cover-placeholder">
-              <el-icon size="32"><Plus /></el-icon>
-              <div class="upload-text">点击上传封面</div>
-              <div class="upload-tip">建议尺寸 16:9，最大 2MB</div>
+    <main class="workspace-main">
+      <!-- Course Info Card -->
+      <div class="course-header-card">
+        <div class="course-info">
+          <div class="course-icon-wrapper">
+            <el-icon class="course-icon"><Reading /></el-icon>
+          </div>
+          <div class="course-details">
+            <div class="course-title-row">
+              <h1 class="course-title">{{ courseForm.name || '网络安全基础 2024' }}</h1>
+              <el-tag size="small" class="course-tag">线上课程</el-tag>
             </div>
-          </el-upload>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 章节编排区 -->
-    <el-card class="curriculum-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>章节编排</span>
-          <el-button type="primary" :icon="Plus" @click="addChapter">
-            添加章节
-          </el-button>
+            <div class="course-meta">
+              <span>学分: 5.0</span>
+              <span class="divider">|</span>
+              <span>目标: 全体员工</span>
+            </div>
+          </div>
         </div>
-      </template>
-      
-      <div class="curriculum-builder">
-        <!-- 左侧目录树 -->
-        <div class="chapter-tree">
-          <div class="tree-header">
-            <span>课程目录</span>
-            <span class="stats">{{ chapters.length }}章 / {{ totalLessons }}节</span>
+        <div class="course-actions">
+          <div class="save-status">
+            <span class="status-label">最后保存</span>
+            <span class="status-time">今天 14:20</span>
+          </div>
+          <el-button class="settings-btn" :icon="Setting"></el-button>
+        </div>
+      </div>
+
+      <!-- 3 Columns Workspace -->
+      <div class="workspace-columns">
+        
+        <!-- Column 1: Chapter Management -->
+        <div class="col-card col-chapters">
+          <div class="col-header">
+            <div class="col-title">
+              <el-icon><Menu /></el-icon>
+              <span>章节管理</span>
+            </div>
+            <el-button link class="add-btn" @click="addChapter">
+              <el-icon><CirclePlus /></el-icon>
+            </el-button>
           </div>
           
-          <draggable 
-            v-model="chapters" 
-            item-key="id"
-            handle=".drag-handle"
-            class="chapter-list"
-          >
-            <template #item="{ element: chapter, index: chapIndex }">
-              <div class="chapter-item">
-                <div 
-                  class="chapter-header"
-                  :class="{ active: currentChapter?.id === chapter.id }"
-                  @click="selectChapter(chapter)"
-                >
-                  <el-icon class="drag-handle"><Rank /></el-icon>
-                  <span class="chapter-name">{{ chapter.name }}</span>
-                  <div class="chapter-actions">
-                    <el-tooltip content="添加子节">
-                      <el-icon @click.stop="addLesson(chapter)"><Plus /></el-icon>
-                    </el-tooltip>
-                    <el-tooltip content="重命名">
-                      <el-icon @click.stop="renameChapter(chapter)"><Edit /></el-icon>
-                    </el-tooltip>
-                    <el-tooltip content="删除章节">
-                      <el-icon @click.stop="deleteChapter(chapter, chapIndex)"><Delete /></el-icon>
-                    </el-tooltip>
-                  </div>
-                </div>
-                
-                <draggable 
-                  v-model="chapter.lessons" 
-                  item-key="id"
-                  handle=".drag-handle"
-                  group="lessons"
-                  class="lesson-list"
-                >
-                  <template #item="{ element: lesson, index: lesIndex }">
-                    <div 
-                      class="lesson-item"
-                      :class="{ 
-                        active: currentLesson?.id === lesson.id,
-                        'has-resource': !!lesson.resource 
-                      }"
-                      @click="selectLesson(chapter, lesson)"
-                    >
+          <div class="col-body chapter-tree-body">
+            <draggable 
+              v-model="chapters" 
+              item-key="id" 
+              handle=".drag-handle" 
+              class="chapter-list"
+              @end="onChapterDragEnd"
+            >
+              <template #item="{ element: chapter, index: chapIndex }">
+                <div class="chapter-item" :class="{ 'is-active': currentChapter?.id === chapter.id }">
+                  <div class="chapter-title" @click="selectChapter(chapter)">
+                    <div class="chapter-title-left">
                       <el-icon class="drag-handle"><Rank /></el-icon>
-                      <el-icon v-if="lesson.resource" size="14" color="#67C23A" class="resource-icon">
-                        <CircleCheck />
+                      <el-icon class="collapse-icon" @click.stop="toggleChapterCollapse(chapter)">
+                        <ArrowDown v-if="!chapter.isCollapsed" />
+                        <ArrowRight v-else />
                       </el-icon>
-                      <el-icon v-else size="14" color="#C0C4CC" class="resource-icon">
-                        <CircleClose />
-                      </el-icon>
-                      <span class="lesson-name">{{ lesson.name }}</span>
-                      <div class="lesson-actions">
-                        <el-icon @click.stop="deleteLesson(chapter, lesIndex)"><Delete /></el-icon>
-                      </div>
+                      <el-input 
+                        v-if="chapter.isEditing"
+                        v-model="chapter.editName"
+                        class="chapter-name-input"
+                        size="small"
+                        @click.stop
+                        @blur="finishRenameChapter(chapter)"
+                        @keyup.enter="finishRenameChapter(chapter)"
+                        ref="chapterInputRef"
+                      />
+                      <span v-else class="chapter-name" @dblclick.stop="startRenameChapter(chapter)">{{ chapter.name }}</span>
                     </div>
-                  </template>
-                </draggable>
-              </div>
-            </template>
-          </draggable>
+                    <div class="chapter-actions">
+                      <el-icon class="action-icon" @click.stop="addLesson(chapter)"><Plus /></el-icon>
+                      <el-dropdown trigger="click">
+                        <el-icon class="action-icon" @click.stop><MoreFilled /></el-icon>
+                        <template #dropdown>
+                          <el-dropdown-menu>
+                            <el-dropdown-item @click="startRenameChapter(chapter)">重命名</el-dropdown-item>
+                            <el-dropdown-item @click="deleteChapter(chapter, chapIndex)" divided class="danger-text">删除章节</el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
+                  </div>
+                  
+                  <div class="chapter-content" v-show="!chapter.isCollapsed">
+                      <draggable 
+                        v-model="chapter.lessons" 
+                        item-key="id" 
+                        handle=".drag-handle" 
+                        group="lessons" 
+                        class="lesson-list"
+                        @end="onLessonDragEnd"
+                      >
+                        <template #item="{ element: lesson, index: lesIndex }">
+                          <div class="lesson-item" :class="{ 'is-active': currentLesson?.id === lesson.id }" @click="selectLesson(chapter, lesson)">
+                            <el-icon class="drag-handle"><Rank /></el-icon>
+                            <el-icon v-if="lesson.resource?.type === 'video'" class="lesson-type-icon icon-video"><VideoPlay /></el-icon>
+                            <el-icon v-else class="lesson-type-icon icon-doc"><Document /></el-icon>
+                            <span class="lesson-name">{{ lesson.name }}</span>
+                          </div>
+                        </template>
+                      </draggable>
+                    </div>
+                </div>
+              </template>
+            </draggable>
+          </div>
         </div>
-        
-        <!-- 右侧配置面板 -->
-        <div class="lesson-config" v-if="currentLesson">
-          <div class="config-header">
-            <h4>节点配置</h4>
-            <div class="current-path">
-              {{ currentChapter?.name }} / {{ currentLesson.name }}
+
+        <!-- Column 2: Content Upload -->
+        <div class="col-card col-content">
+          <div class="col-header">
+            <div class="col-title">
+              <el-icon><Menu /></el-icon>
+              <span>内容管理</span>
             </div>
           </div>
           
-          <div class="config-body">
-            <!-- 资源挂载区 -->
-            <div class="config-section">
-              <h5>学习资源</h5>
-              
-              <div v-if="currentLesson.resource" class="resource-preview">
-                <div class="resource-card">
-                  <el-image 
-                    v-if="currentLesson.resource.thumbnail"
-                    :src="currentLesson.resource.thumbnail" 
-                    class="resource-thumb"
-                    fit="cover"
-                  />
-                  <div v-else class="resource-icon-large">
-                    <el-icon size="48" color="#409EFF"><Document /></el-icon>
+          <div class="col-body" v-if="currentLesson">
+            <div class="form-group">
+              <label class="form-label">小节标题</label>
+              <el-input v-model="currentLesson.name" class="lesson-title-input" />
+            </div>
+
+            <div class="upload-area" v-if="!currentLesson.resource">
+              <el-upload
+                class="content-uploader"
+                drag
+                action="/api/upload"
+                :show-file-list="false"
+                :on-success="handleResourceUploadSuccess"
+              >
+                <div class="upload-inner">
+                  <!-- <el-icon class="upload-icon"><CloudUpload /></el-icon> -->
+                  <div class="upload-text">点击或拖拽文件上传</div>
+                  <div class="upload-tip">支持 MP4, PDF, PPT (最大 500MB)</div>
+                  <div class="supported-icons">
+                    <el-icon class="icon-pdf" color="#E74C3C"><Document /></el-icon>
+                    <el-icon class="icon-video" color="#3498DB"><VideoPlay /></el-icon>
+                    <el-icon class="icon-ppt" color="#F39C12"><DataBoard /></el-icon>
                   </div>
-                  <div class="resource-info">
-                    <div class="resource-name">{{ currentLesson.resource.name }}</div>
-                    <div class="resource-meta">
-                      <span v-if="currentLesson.resource.duration">
-                        <el-icon><Timer /></el-icon>
-                        {{ currentLesson.resource.duration }}
-                      </span>
-                      <el-tag size="small">{{ getResourceTypeLabel(currentLesson.resource.type) }}</el-tag>
-                    </div>
-                  </div>
-                  <el-button 
-                    type="danger" 
-                    link 
-                    :icon="Close"
-                    @click="removeResource"
-                    class="remove-btn"
-                  >
-                    移除
-                  </el-button>
                 </div>
-              </div>
-              
-              <div v-else class="resource-empty" @click="openResourceModal">
-                <el-icon size="48" color="#C0C4CC"><Plus /></el-icon>
-                <p>从资源库选择素材</p>
-              </div>
+              </el-upload>
             </div>
             
-            <!-- 节点属性 -->
-            <div class="config-section">
-              <h5>节点属性</h5>
-              
-              <el-form label-width="120px">
-                <el-form-item label="允许免费试看">
-                  <el-switch v-model="currentLesson.isFree" />
-                </el-form-item>
-                
-                <el-form-item label="关联课后练习">
-                  <el-select 
-                    v-model="currentLesson.quizId" 
-                    placeholder="选择微试卷（可选）"
-                    clearable
-                    style="width: 100%;"
-                  >
-                    <el-option 
-                      v-for="quiz in quizList" 
-                      :key="quiz.id" 
-                      :label="quiz.name" 
-                      :value="quiz.id" 
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-form>
+            <div class="uploaded-file-card" v-else>
+              <div class="file-icon-wrapper">
+                <el-icon v-if="currentLesson.resource.type === 'video'" class="file-icon" color="#3498DB"><VideoPlay /></el-icon>
+                <el-icon v-else class="file-icon" color="#E74C3C"><Document /></el-icon>
+              </div>
+              <div class="file-info">
+                <div class="file-name">{{ currentLesson.resource.name }}</div>
+                <div class="file-meta">{{ currentLesson.resource.size || '124.5 MB' }} · 已上传</div>
+              </div>
+              <div class="file-actions">
+                <el-button link><el-icon><View /></el-icon></el-button>
+                <el-button link type="danger" @click="removeResource"><el-icon><Delete /></el-icon></el-button>
+              </div>
             </div>
+
+            <el-button class="import-btn" @click="openResourceModal" plain>
+              <el-icon><Files /></el-icon> 从素材库导入
+            </el-button>
+          </div>
+          
+          <div class="col-body empty-state" v-else>
+            <el-empty description="请先在左侧选择或添加小节" />
           </div>
         </div>
-        
-        <div class="lesson-config empty" v-else>
-          <el-empty description="请选择或创建一个课时节点" />
-        </div>
+
+        <!-- Column 3: Learning Settings -->
+        <!-- <div class="col-card col-settings">
+          <div class="col-header">
+            <div class="col-title">
+              <el-icon><Menu /></el-icon>
+              <span>学习设置</span>
+            </div>
+          </div>
+          
+          <div class="col-body" v-if="currentLesson">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">防拖拽进度条</div>
+                <div class="setting-desc">无法跳过未学章节。</div>
+              </div>
+              <el-switch v-model="settings.antiDrag" />
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">断点续看</div>
+                <div class="setting-desc">自动记录观看进度。</div>
+              </div>
+              <el-switch v-model="settings.resumePlayback" />
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">完成后解锁下一课</div>
+                <div class="setting-desc">完成当前节解锁下部分。</div>
+              </div>
+              <el-switch v-model="settings.unlockNext" />
+            </div>
+
+            <div class="form-group min-view-time">
+              <label class="form-label">最少观看时长 (分钟)</label>
+              <el-input v-model="settings.minViewTime" placeholder="10">
+                <template #suffix>MIN</template>
+              </el-input>
+            </div>
+
+            <div class="info-alert">
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+              <div class="alert-content">
+                <div class="alert-title">提示</div>
+                <div class="alert-desc">章节必须包含至少一个教学内容方可发布。</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-body empty-state" v-else>
+            <el-empty description="请选择小节" />
+          </div>
+        </div> -->
       </div>
-    </el-card>
+    </main>
 
     <!-- 资源选择模态框 -->
-    <resource-selector
-      v-model:visible="resourceModalVisible"
-      @select="handleResourceSelect"
-    />
+    <resource-selector v-model:visible="resourceModalVisible" @select="handleResourceSelect" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Close, Timer, Document, ArrowLeft } from '@element-plus/icons-vue'
+import { 
+  Plus, Close, Timer, Document, ArrowLeft, EditPen, Upload, Reading, 
+  Setting, Menu, CirclePlus, MoreFilled, VideoPlay, FullScreen, 
+  DataBoard, View, Delete, Files, InfoFilled, Rank, CircleCheck, CircleClose, Edit,
+  ArrowDown, ArrowRight
+} from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
 import ResourceSelector from './components/ResourceSelector.vue'
 import { mockCourses, mockChapters, mockQuizzes } from './mock'
@@ -272,6 +287,13 @@ const currentChapter = ref(null)
 const currentLesson = ref(null)
 const quizList = ref([])
 const resourceModalVisible = ref(false)
+
+const settings = ref({
+  antiDrag: true,
+  resumePlayback: true,
+  unlockNext: false,
+  minViewTime: 10
+})
 
 const totalLessons = computed(() => {
   return chapters.value.reduce((sum, chap) => sum + (chap.lessons?.length || 0), 0)
@@ -304,32 +326,106 @@ const loadCourseData = () => {
   quizList.value = mockQuizzes
 }
 
-// 章节操作
-const addChapter = () => {
-  ElMessageBox.prompt('请输入章节名称', '添加章节', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).then(({ value }) => {
-    const newChapter = {
-      id: `chap-${Date.now()}`,
-      name: value,
-      sort: chapters.value.length + 1,
-      lessons: []
+// 拖拽结束处理逻辑
+const updateChapterNames = () => {
+  chapters.value.forEach((chapter, index) => {
+    const sort = index + 1
+    chapter.sort = sort
+    // 只替换"第X章"部分，保留冒号后面的自定义标题内容
+    const nameParts = chapter.name.split('：')
+    if (nameParts.length > 1) {
+      chapter.name = `第${numberToChinese(sort)}章：${nameParts.slice(1).join('：')}`
+    } else {
+      chapter.name = `第${numberToChinese(sort)}章`
     }
-    chapters.value.push(newChapter)
-    ElMessage.success('章节添加成功')
   })
 }
 
-const renameChapter = (chapter) => {
-  ElMessageBox.prompt('请输入新名称', '重命名章节', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputValue: chapter.name
-  }).then(({ value }) => {
-    chapter.name = value
-    ElMessage.success('重命名成功')
+const updateLessonNames = () => {
+  chapters.value.forEach((chapter, cIndex) => {
+    const chapterSort = cIndex + 1
+    if (chapter.lessons && chapter.lessons.length > 0) {
+      chapter.lessons.forEach((lesson, lIndex) => {
+        const lessonSort = lIndex + 1
+        lesson.sort = lessonSort
+        // 替换开头的 "X.Y " 部分
+        const nameMatch = lesson.name.match(/^\d+\.\d+\s+(.*)/)
+        if (nameMatch && nameMatch[1]) {
+          lesson.name = `${chapterSort}.${lessonSort} ${nameMatch[1]}`
+        } else {
+          lesson.name = `${chapterSort}.${lessonSort} 新小节`
+        }
+      })
+    }
   })
+}
+
+const onChapterDragEnd = () => {
+  updateChapterNames()
+  // 章节顺序改变可能会影响小节的标题（前面的 1.x 变 2.x）
+  updateLessonNames()
+  ElMessage.success('章节顺序已更新')
+}
+
+const onLessonDragEnd = () => {
+  updateLessonNames()
+  ElMessage.success('小节顺序已更新')
+}
+
+// 辅助函数：将数字转换为中文数字
+const numberToChinese = (num) => {
+  const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+  if (num <= 10) return chineseNumbers[num]
+  if (num < 20) return '十' + (num % 10 === 0 ? '' : chineseNumbers[num % 10])
+  const ten = Math.floor(num / 10)
+  const unit = num % 10
+  return chineseNumbers[ten] + '十' + (unit === 0 ? '' : chineseNumbers[unit])
+}
+
+// 章节操作
+const toggleChapterCollapse = (chapter) => {
+  if (chapter.isEditing) return
+  chapter.isCollapsed = !chapter.isCollapsed
+}
+
+const addChapter = () => {
+  const nextSort = chapters.value.length + 1
+  const newChapter = {
+    id: `chap-${Date.now()}`,
+    name: `第${numberToChinese(nextSort)}章：新章节`,
+    sort: nextSort,
+    lessons: [],
+    isCollapsed: false,
+    isEditing: false,
+    editName: ''
+  }
+  chapters.value.push(newChapter)
+  ElMessage.success('章节添加成功')
+}
+
+const chapterInputRef = ref(null)
+
+const startRenameChapter = async (chapter) => {
+  chapter.editName = chapter.name
+  chapter.isEditing = true
+  // 等待 DOM 更新后聚焦输入框
+  await nextTick()
+  if (chapterInputRef.value) {
+    // 处理可能是一个数组（由于 v-for 渲染）或单个元素的情况
+    const inputEl = Array.isArray(chapterInputRef.value) ? chapterInputRef.value[0] : chapterInputRef.value
+    inputEl?.focus()
+  }
+}
+
+const finishRenameChapter = (chapter) => {
+  if (!chapter.isEditing) return
+  
+  const newName = chapter.editName.trim()
+  if (newName && newName !== chapter.name) {
+    chapter.name = newName
+    ElMessage.success('重命名成功')
+  }
+  chapter.isEditing = false
 }
 
 const deleteChapter = (chapter, index) => {
@@ -351,22 +447,23 @@ const selectChapter = (chapter) => {
 
 // 课时操作
 const addLesson = (chapter) => {
-  ElMessageBox.prompt('请输入课时名称', '添加课时', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }).then(({ value }) => {
-    const newLesson = {
-      id: `les-${Date.now()}`,
-      name: value,
-      sort: (chapter.lessons?.length || 0) + 1,
-      resource: null,
-      isFree: false,
-      quizId: null
-    }
-    if (!chapter.lessons) chapter.lessons = []
-    chapter.lessons.push(newLesson)
-    ElMessage.success('课时添加成功')
-  })
+  if (!chapter.lessons) chapter.lessons = []
+  const chapterIndex = chapters.value.findIndex(c => c.id === chapter.id) + 1
+  const nextSort = chapter.lessons.length + 1
+  
+  const newLesson = {
+    id: `les-${Date.now()}`,
+    name: `${chapterIndex}.${nextSort} 新小节`,
+    sort: nextSort,
+    resource: null,
+    isFree: false,
+    quizId: null
+  }
+  
+  chapter.lessons.push(newLesson)
+  ElMessage.success('课时添加成功')
+  // 自动选中新添加的小节
+  selectLesson(chapter, newLesson)
 }
 
 const deleteLesson = (chapter, index) => {
@@ -391,6 +488,18 @@ const handleResourceSelect = (resource) => {
   if (currentLesson.value) {
     currentLesson.value.resource = resource
     ElMessage.success('资源挂载成功')
+  }
+}
+
+const handleResourceUploadSuccess = (res, file) => {
+  if (currentLesson.value) {
+    currentLesson.value.resource = {
+      id: Date.now(),
+      name: file.name,
+      type: file.name.endsWith('.mp4') ? 'video' : file.name.endsWith('.pdf') ? 'document' : 'other',
+      size: (file.size / 1024 / 1024).toFixed(1) + ' MB'
+    }
+    ElMessage.success('上传成功')
   }
 }
 
@@ -426,345 +535,607 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.course-edit-page {
-  .page-header {
+.workspace-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  .workspace-header {
+    height: 56px;
+    background: #fff;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    
+    padding: 0 24px;
+    box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+    z-index: 10;
+
     .header-left {
       display: flex;
       align-items: center;
       gap: 16px;
-      
-      h2 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 500;
+
+      .back-btn {
+        font-size: 18px;
+        color: #606266;
       }
-    }
-  }
-  
-  .basic-info-card {
-    margin-bottom: 20px;
-    
-    .card-header {
-      font-weight: 500;
-    }
-    
-    .cover-uploader {
-      :deep(.el-upload) {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        transition: border-color 0.3s;
-        
-        &:hover {
-          border-color: #409EFF;
-        }
-      }
-      
-      .cover-image {
-        width: 300px;
-        height: 169px;
-        object-fit: cover;
-      }
-      
-      .cover-placeholder {
-        width: 300px;
-        height: 169px;
+
+      .title-with-icon {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        color: #8c939d;
-        
-        .upload-text {
-          margin-top: 8px;
-          font-size: 14px;
+        gap: 8px;
+        padding: 4px 12px;
+        background: #f0f5ff;
+        border-radius: 4px;
+        color: #1890ff;
+
+        .edit-icon {
+          font-size: 16px;
         }
-        
-        .upload-tip {
-          margin-top: 4px;
-          font-size: 12px;
+
+        h2 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 500;
         }
       }
     }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .preview-btn {
+        border-color: #d9d9d9;
+        color: #333;
+      }
+
+      .publish-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+    }
   }
-  
-  .curriculum-card {
-    .card-header {
+
+  .workspace-main {
+    flex: 1;
+    // padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    .course-header-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+
+      .course-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .course-icon-wrapper {
+          width: 56px;
+          height: 56px;
+          background: #e6f7ff;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .course-icon {
+            font-size: 28px;
+            color: #1890ff;
+          }
+        }
+
+        .course-details {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          .course-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            .course-title {
+              margin: 0;
+              font-size: 18px;
+              font-weight: 600;
+              color: #1f2225;
+            }
+
+            .course-tag {
+              background: #e6f7ff;
+              border-color: #91d5ff;
+              color: #1890ff;
+            }
+          }
+
+          .course-meta {
+            font-size: 13px;
+            color: #8c939d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .divider {
+              color: #dcdfe6;
+            }
+          }
+        }
+      }
+
+      .course-actions {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+
+        .save-status {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          font-size: 12px;
+
+          .status-label {
+            color: #8c939d;
+          }
+
+          .status-time {
+            color: #303133;
+            font-weight: 500;
+          }
+        }
+
+        .settings-btn {
+          border-color: #dcdfe6;
+          color: #606266;
+        }
+      }
     }
-    
-    .curriculum-builder {
+
+    .workspace-columns {
       display: flex;
-      height: 600px;
-      
-      .chapter-tree {
-        width: 320px;
-        border-right: 1px solid #ebeef5;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+
+      .col-card {
+        background: #fff;
+        border-radius: 12px;
         display: flex;
         flex-direction: column;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         
-        .tree-header {
-          padding: 12px 16px;
-          border-bottom: 1px solid #ebeef5;
+        &.col-chapters { flex: 1; max-width: 320px; }
+        &.col-content { flex: 2; }
+        &.col-settings { flex: 1; max-width: 320px; }
+
+        .col-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #f0f2f5;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          
-          .stats {
-            font-size: 12px;
-            color: #909399;
+
+          .col-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #1f2225;
+
+            .el-icon {
+              color: #8c939d;
+            }
+
+            .highlight-title {
+              color: #1890ff;
+            }
+          }
+
+          .add-btn, .expand-btn, .settings-btn {
+            color: #1890ff;
+            font-size: 18px;
+            padding: 4px;
           }
         }
-        
-        .chapter-list {
+
+        .col-body {
           flex: 1;
+          padding: 20px;
           overflow-y: auto;
-          padding: 8px;
-          
-          .chapter-item {
-            margin-bottom: 8px;
-            
-            .chapter-header {
-              display: flex;
-              align-items: center;
-              padding: 10px 12px;
-              border-radius: 6px;
-              cursor: pointer;
-              transition: all 0.2s;
-              
-              &:hover, &.active {
-                background: #ecf5ff;
-              }
-              
-              .drag-handle {
-                cursor: move;
-                margin-right: 8px;
-                color: #c0c4cc;
-              }
-              
-              .chapter-name {
-                flex: 1;
-                font-weight: 500;
-                color: #303133;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              }
-              
-              .chapter-actions {
-                display: none;
-                gap: 8px;
-                
-                .el-icon {
-                  padding: 4px;
-                  border-radius: 4px;
-                  
-                  &:hover {
-                    background: #dcdfe6;
-                  }
-                }
-              }
-              
-              &:hover .chapter-actions {
-                display: flex;
-              }
-            }
-            
-            .lesson-list {
-              padding-left: 24px;
-              
-              .lesson-item {
+
+          &.chapter-tree-body {
+            padding: 12px;
+          }
+
+          &.empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+      }
+
+      /* Chapter Management Styles */
+      .chapter-list {
+        .chapter-item {
+          background: #f8f9fa;
+          border-radius: 8px;
+          margin-bottom: 12px;
+          overflow: hidden;
+
+          .chapter-title {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            cursor: pointer;
+
+            .chapter-title-left {
                 display: flex;
                 align-items: center;
-                padding: 8px 12px;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: all 0.2s;
-                margin-top: 4px;
-                
-                &:hover, &.active {
-                  background: #f5f7fa;
-                }
-                
-                &.has-resource .lesson-name {
-                  color: #67C23A;
-                }
-                
+                gap: 8px;
+                flex: 1;
+
                 .drag-handle {
-                  cursor: move;
-                  margin-right: 6px;
-                  color: #c0c4cc;
-                  font-size: 12px;
+                  cursor: grab;
+                  color: #dcdfe6;
+                  font-size: 16px;
+                  margin-right: -4px;
+                  
+                  &:hover {
+                    color: #8c939d;
+                  }
+                  
+                  &:active {
+                    cursor: grabbing;
+                  }
                 }
-                
-                .resource-icon {
-                  margin-right: 6px;
+
+                .collapse-icon {
+                  color: #8c939d;
+                  font-size: 14px;
+                  transition: transform 0.3s;
+                  flex-shrink: 0;
+                  
+                  &:hover {
+                    color: #1890ff;
+                  }
                 }
-                
-                .lesson-name {
-                  flex: 1;
-                  font-size: 13px;
-                  color: #606266;
+
+                .chapter-name {
+                  font-size: 14px;
+                  color: #1f2225;
+                  user-select: none;
                   white-space: nowrap;
                   overflow: hidden;
                   text-overflow: ellipsis;
                 }
-                
-                .lesson-actions {
-                  display: none;
-                  
-                  .el-icon {
-                    padding: 4px;
-                    border-radius: 4px;
-                    
-                    &:hover {
-                      background: #fcd3d3;
-                      color: #f56c6c;
-                    }
-                  }
+
+                .chapter-name-input {
+                  flex: 1;
+                  margin-right: 8px;
                 }
+              }
+
+            .chapter-actions {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+
+              .action-icon {
+                font-size: 20px;
+                color: #8c939d;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.2s;
                 
-                &:hover .lesson-actions {
-                  display: block;
+                &:hover { 
+                  background: #e9ecef;
+                  color: #1890ff;
                 }
+              }
+            }
+          }
+
+          .lesson-list {
+            padding: 0 12px;
+
+            .lesson-item {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 10px 12px;
+              margin-bottom: 8px;
+              background: #fff;
+              border-radius: 6px;
+              cursor: pointer;
+              border: 1px solid transparent;
+              transition: all 0.2s;
+
+              .drag-handle {
+                cursor: grab;
+                color: #dcdfe6;
+                font-size: 14px;
+                opacity: 0;
+                transition: opacity 0.2s;
+                
+                &:active {
+                  cursor: grabbing;
+                }
+              }
+
+              &:hover {
+                border-color: #d9ecff;
+                
+                .drag-handle {
+                  opacity: 1;
+                }
+              }
+
+              &.is-active {
+                background: #e6f7ff;
+                border-color: #91d5ff;
+                
+                .lesson-name {
+                  color: #1890ff;
+                  font-weight: 500;
+                }
+              }
+
+              .lesson-type-icon {
+                font-size: 16px;
+                color: #8c939d;
+                
+                // &.icon-video {
+                //   color: #3498db;
+                // }
+                
+                // &.icon-doc {
+                //   color: #e74c3c;
+                // }
+              }
+
+              .lesson-name {
+                font-size: 13px;
+                color: #303133;
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
               }
             }
           }
         }
       }
-      
-      .lesson-config {
-        flex: 1;
-        background: #f5f7fa;
+
+      /* Content Upload Styles */
+      .form-group {
+        margin-bottom: 24px;
+
+        .form-label {
+          display: block;
+          font-size: 13px;
+          color: #606266;
+          margin-bottom: 8px;
+        }
+
+        .lesson-title-input {
+          :deep(.el-input__wrapper) {
+            background-color: #f8f9fa;
+            box-shadow: none;
+            border: 1px solid transparent;
+            padding: 4px 12px;
+            
+            &.is-focus {
+              background-color: #fff;
+              border-color: #409eff;
+              box-shadow: 0 0 0 1px #409eff inset;
+            }
+
+            .el-input__inner {
+              font-size: 16px;
+              font-weight: 500;
+              color: #1f2225;
+            }
+          }
+        }
+      }
+
+      .upload-area {
+        margin-bottom: 24px;
+
+        .content-uploader {
+          :deep(.el-upload-dragger) {
+            padding: 40px;
+            background: #f8f9fa;
+            border: 2px dashed #dcdfe6;
+            border-radius: 12px;
+            
+            &:hover {
+              border-color: #1890ff;
+              background: #f0f5ff;
+            }
+          }
+        }
+
+        .upload-inner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+
+          .upload-icon {
+            font-size: 48px;
+            color: #91d5ff;
+            margin-bottom: 16px;
+          }
+
+          .upload-text {
+            font-size: 16px;
+            color: #303133;
+            font-weight: 500;
+            margin-bottom: 8px;
+          }
+
+          .upload-tip {
+            font-size: 13px;
+            color: #8c939d;
+            margin-bottom: 20px;
+          }
+
+          .supported-icons {
+            display: flex;
+            gap: 16px;
+            font-size: 24px;
+          }
+        }
+      }
+
+      .uploaded-file-card {
         display: flex;
-        flex-direction: column;
-        
-        &.empty {
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: #f8f9fa;
+        border: 1px solid #ebeef5;
+        border-radius: 8px;
+        margin-bottom: 24px;
+
+        .file-icon-wrapper {
+          width: 40px;
+          height: 40px;
+          background: #fff;
+          border-radius: 8px;
+          display: flex;
           align-items: center;
           justify-content: center;
-        }
-        
-        .config-header {
-          padding: 16px 20px;
-          background: #fff;
-          border-bottom: 1px solid #ebeef5;
-          
-          h4 {
-            margin: 0 0 8px;
-            font-size: 16px;
-          }
-          
-          .current-path {
-            font-size: 13px;
-            color: #909399;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+          .file-icon {
+            font-size: 24px;
           }
         }
-        
-        .config-body {
+
+        .file-info {
           flex: 1;
-          overflow-y: auto;
-          padding: 20px;
+
+          .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2225;
+            margin-bottom: 4px;
+          }
+
+          .file-meta {
+            font-size: 12px;
+            color: #8c939d;
+          }
+        }
+
+        .file-actions {
+          display: flex;
+          gap: 8px;
           
-          .config-section {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 16px;
-            
-            h5 {
-              margin: 0 0 16px;
-              font-size: 14px;
-              color: #303133;
-              padding-bottom: 12px;
-              border-bottom: 1px solid #ebeef5;
-            }
-            
-            .resource-empty {
-              height: 160px;
-              border: 2px dashed #dcdfe6;
-              border-radius: 8px;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              cursor: pointer;
-              transition: all 0.3s;
-              
-              &:hover {
-                border-color: #409EFF;
-                background: #ecf5ff;
-              }
-              
-              p {
-                margin-top: 12px;
-                color: #606266;
-              }
-            }
-            
-            .resource-card {
-              display: flex;
-              align-items: center;
-              gap: 16px;
-              padding: 16px;
-              background: #f5f7fa;
-              border-radius: 8px;
-              
-              .resource-thumb {
-                width: 120px;
-                height: 68px;
-                border-radius: 4px;
-                object-fit: cover;
-              }
-              
-              .resource-icon-large {
-                width: 120px;
-                height: 68px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #fff;
-                border-radius: 4px;
-              }
-              
-              .resource-info {
-                flex: 1;
-                
-                .resource-name {
-                  font-size: 14px;
-                  font-weight: 500;
-                  color: #303133;
-                  margin-bottom: 8px;
-                }
-                
-                .resource-meta {
-                  display: flex;
-                  align-items: center;
-                  gap: 12px;
-                  font-size: 13px;
-                  color: #909399;
-                  
-                  span {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                  }
-                }
-              }
-              
-              .remove-btn {
-                margin-left: auto;
-              }
-            }
+          .el-button {
+            font-size: 18px;
+          }
+        }
+      }
+
+      .import-btn {
+        width: 100%;
+        height: 44px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border-color: #dcdfe6;
+        color: #606266;
+        font-weight: 500;
+
+        &:hover {
+          color: #1890ff;
+          border-color: #91d5ff;
+          background: #e6f7ff;
+        }
+      }
+
+      /* Learning Settings Styles */
+      .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #f0f2f5;
+
+        .setting-info {
+          .setting-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2225;
+            margin-bottom: 4px;
+          }
+
+          .setting-desc {
+            font-size: 12px;
+            color: #8c939d;
+          }
+        }
+      }
+
+      .min-view-time {
+        margin-top: 24px;
+
+        :deep(.el-input__wrapper) {
+          box-shadow: none;
+          border: 1px solid #dcdfe6;
+          background: #fff;
+          
+          &:hover, &.is-focus {
+            border-color: #409eff;
+          }
+        }
+      }
+
+      .info-alert {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        background: #f0f5ff;
+        border-radius: 8px;
+        margin-top: 24px;
+
+        .info-icon {
+          color: #1890ff;
+          font-size: 18px;
+          margin-top: 2px;
+        }
+
+        .alert-content {
+          .alert-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1890ff;
+            margin-bottom: 4px;
+          }
+
+          .alert-desc {
+            font-size: 12px;
+            color: #606266;
+            line-height: 1.5;
           }
         }
       }
