@@ -100,6 +100,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { Search } from 'lucide-vue-next'
 import Breadcrumb from './components/Breadcrumb.vue'
 
 const route = useRoute()
