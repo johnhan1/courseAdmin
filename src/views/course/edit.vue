@@ -121,6 +121,9 @@
                             <el-icon v-if="lesson.resource?.type === 'video'" class="lesson-type-icon icon-video"><VideoPlay /></el-icon>
                             <el-icon v-else class="lesson-type-icon icon-doc"><Document /></el-icon>
                             <span class="lesson-name">{{ lesson.name }}</span>
+                            <el-tooltip v-if="!lesson.resource" content="未上传内容" placement="top">
+                              <el-icon class="warning-icon"><Warning /></el-icon>
+                            </el-tooltip>
                           </div>
                         </template>
                       </draggable>
@@ -262,7 +265,7 @@ import {
   Plus, Close, Timer, Document, ArrowLeft, EditPen, Upload, Reading, 
   Setting, Menu, CirclePlus, MoreFilled, VideoPlay, FullScreen, 
   DataBoard, View, Delete, Files, InfoFilled, Rank, CircleCheck, CircleClose, Edit,
-  ArrowDown, ArrowRight
+  ArrowDown, ArrowRight, Warning
 } from '@element-plus/icons-vue'
 import draggable from 'vuedraggable'
 import ResourceSelector from './components/ResourceSelector.vue'
@@ -793,7 +796,7 @@ onMounted(() => {
 
                 .drag-handle {
                   cursor: grab;
-                  color: #dcdfe6;
+                  color: #8c939d;
                   font-size: 16px;
                   margin-right: -4px;
                   
@@ -870,9 +873,8 @@ onMounted(() => {
 
               .drag-handle {
                 cursor: grab;
-                color: #dcdfe6;
+                color: #8c939d;
                 font-size: 14px;
-                opacity: 0;
                 transition: opacity 0.2s;
                 
                 &:active {
@@ -901,14 +903,6 @@ onMounted(() => {
               .lesson-type-icon {
                 font-size: 16px;
                 color: #8c939d;
-                
-                // &.icon-video {
-                //   color: #3498db;
-                // }
-                
-                // &.icon-doc {
-                //   color: #e74c3c;
-                // }
               }
 
               .lesson-name {
@@ -918,6 +912,11 @@ onMounted(() => {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+              }
+
+              .warning-icon {
+                color: #F56C6C;
+                font-size: 14px;
               }
             }
           }
