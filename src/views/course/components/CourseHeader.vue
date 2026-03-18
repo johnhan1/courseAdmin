@@ -94,7 +94,8 @@ const getStatusType = (status) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.05);
+  border: 1px solid #ebeef5;
 
   .course-info {
     display: flex;

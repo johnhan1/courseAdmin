@@ -91,7 +91,8 @@ const onUploadSuccess = (res, file) => {
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.05);
+  border: 1px solid #ebeef5;
   
   &.col-content { flex: 2; }
 
